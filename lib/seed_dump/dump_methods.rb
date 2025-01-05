@@ -1,129 +1,143 @@
+# frozen_string_literal: true
+
 class SeedDump
+  # Provides methods for dumping database records into Ruby code that can be used
+  # as seeds. Handles various data types and supports both create and import formats.
   module DumpMethods
     include Enumeration
 
     def dump(records, options = {})
-      return nil if records.count == 0
+      return nil if records.none?
 
-      io = open_io(options)
-
-      write_records_to_io(records, io, options)
-
-      ensure
-        io.close if io.present?
+      io = prepare_io(options)
+      write_records(records, io, options)
+    ensure
+      io&.close
     end
 
     private
 
     def dump_record(record, options)
-      attribute_strings = []
-
-      # We select only string attribute names to avoid conflict
-      # with the composite_primary_keys gem (it returns composite
-      # primary key attribute names as hashes).
-      record.attributes.select {|key| key.is_a?(String) || key.is_a?(Symbol) }.each do |attribute, value|
-        attribute_strings << dump_attribute_new(attribute, value, options) unless options[:exclude].include?(attribute.to_sym)
-      end
-
-      open_character, close_character = options[:import] ? ['[', ']'] : ['{', '}']
-
-      "#{open_character}#{attribute_strings.join(", ")}#{close_character}"
+      attributes = filter_attributes(record.attributes, options[:exclude])
+      formatted_attributes = format_attributes(attributes, options[:import])
+      wrap_attributes(formatted_attributes, options[:import])
     end
 
-    def dump_attribute_new(attribute, value, options)
-      options[:import] ? value_to_s(value) : "#{attribute}: #{value_to_s(value)}"
+    def filter_attributes(attributes, exclude)
+      attributes.select do |key, _|
+        (key.is_a?(String) || key.is_a?(Symbol)) && !exclude.include?(key.to_sym)
+      end
+    end
+
+    def format_attributes(attributes, import_format)
+      attributes.map do |attribute, value|
+        import_format ? value_to_s(value) : "#{attribute}: #{value_to_s(value)}"
+      end.join(", ")
+    end
+
+    def wrap_attributes(attribute_string, import_format)
+      open_char, close_char = import_format ? ["[", "]"] : ["{", "}"]
+      "#{open_char}#{attribute_string}#{close_char}"
     end
 
     def value_to_s(value)
-      value = case value
-              when BigDecimal, IPAddr
-                value.to_s
-              when Date, Time, DateTime
-                value.to_formatted_s(:db)
-              when Range
-                range_to_string(value)
-              when ->(v) { v.class.ancestors.map(&:to_s).include?('RGeo::Feature::Instance') }
-                value.to_s
-              else
-                value
-              end
-
-      value.inspect
+      formatted_value = case value
+                        when BigDecimal, IPAddr, ->(v) { rgeo_instance?(v) }
+                          value.to_s
+                        when Date, Time, DateTime
+                          value.to_formatted_s(:db)
+                        when Range
+                          range_to_string(value)
+                        else
+                          value
+      end
+      formatted_value.inspect
     end
 
-    def range_to_string(object)
-      from = object.begin.respond_to?(:infinite?) && object.begin.infinite? ? '' : object.begin
-      to   = object.end.respond_to?(:infinite?) && object.end.infinite? ? '' : object.end
-      "[#{from},#{to}#{object.exclude_end? ? ')' : ']'}"
+    def range_to_string(range)
+      from = infinite_value?(range.begin) ? "" : range.begin
+      to   = infinite_value?(range.end) ? "" : range.end
+      exclude_end = range.exclude_end? ? ")" : "]"
+      "[#{from},#{to}#{exclude_end}"
     end
 
-    def open_io(options)
+    def rgeo_instance?(value)
+      value.class.ancestors.any? { |ancestor| ancestor.to_s == "RGeo::Feature::Instance" }
+    end
+
+    def infinite_value?(value)
+      value.respond_to?(:infinite?) && value.infinite?
+    end
+
+    def prepare_io(options)
       if options[:file].present?
-        mode = options[:append] ? 'a+' : 'w+'
-
+        mode = options[:append] ? "a+" : "w+"
         File.open(options[:file], mode)
       else
-        StringIO.new('', 'w+')
+        StringIO.new
       end
     end
 
-    def write_records_to_io(records, io, options)
-      options[:exclude] ||= [:id, :created_at, :updated_at]
+    def write_records(records, io, options)
+      options[:exclude] ||= %i[id created_at updated_at]
 
-      method = options[:import] ? 'import' : 'create!'
-      io.write("#{model_for(records)}.#{method}(")
-      if options[:import]
-        io.write("[#{attribute_names(records, options).map {|name| name.to_sym.inspect}.join(', ')}], ")
-      end
+      method_call = build_method_call(records, options)
+      io.write(method_call)
       io.write("[\n  ")
 
-      enumeration_method = if records.is_a?(ActiveRecord::Relation) || records.is_a?(Class)
-                             :active_record_enumeration
-                           else
-                             :enumerable_enumeration
-                           end
-
+      enumeration_method = select_enumeration_method(records)
       send(enumeration_method, records, io, options) do |record_strings, last_batch|
         io.write(record_strings.join(",\n  "))
-
         io.write(",\n  ") unless last_batch
       end
 
-      io.write("\n]#{active_record_import_options(options)})\n")
+      io.write("\n]#{format_import_options(options)})\n")
 
-      if options[:file].present?
-        nil
+      return if options[:file].present?
+
+      io.rewind
+      io.read
+    end
+
+    def build_method_call(records, options)
+      method = options[:import] ? "import" : "create!"
+      model_name = determine_model(records)
+      if options[:import]
+        attributes_list = attribute_names(records, options).map(&:to_sym).map(&:inspect).join(", ")
+        "#{model_name}.#{method}([#{attributes_list}], "
       else
-        io.rewind
-        io.read
+        "#{model_name}.#{method}("
       end
     end
 
-    def active_record_import_options(options)
-      return unless options[:import] && options[:import].is_a?(Hash)
+    def format_import_options(options)
+      return "" unless options[:import].is_a?(Hash)
 
-      ', ' + options[:import].map { |key, value| "#{key}: #{value}" }.join(', ')
+      options_string = options[:import].map { |key, value| "#{key}: #{value}" }.join(", ")
+      ", #{options_string}"
     end
 
     def attribute_names(records, options)
-      attribute_names = if records.is_a?(ActiveRecord::Relation) || records.is_a?(Class)
-                          records.attribute_names
-                        else
-                          records[0].attribute_names
-                        end
-
-      attribute_names.select {|name| !options[:exclude].include?(name.to_sym)}
+      attributes = records.respond_to?(:attribute_names) ? records.attribute_names : records.first.attribute_names
+      attributes.reject { |name| options[:exclude].include?(name.to_sym) }
     end
 
-    def model_for(records)
+    def determine_model(records)
       if records.is_a?(Class)
         records
       elsif records.respond_to?(:model)
         records.model
       else
-        records[0].class
+        records.first.class
       end
     end
 
+    def select_enumeration_method(records)
+      if records.is_a?(ActiveRecord::Relation) || records.is_a?(Class)
+        :active_record_enumeration
+      else
+        :enumerable_enumeration
+      end
+    end
   end
 end

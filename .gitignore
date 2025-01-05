@@ -20,3 +20,5 @@ pkg
 
 ## PROJECT::SPECIFIC
 Gemfile.lock
+blargle
+db/seeds.rb

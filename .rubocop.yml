@@ -1,0 +1,191 @@
+inherit_gem:
+  rubocop-mhenrixon:
+    - config/default.yml
+
+require:
+  - rubocop-factory_bot
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rake
+  - rubocop-rspec
+
+AllCops:
+  DisabledByDefault: false
+  Include:
+    - '*.rb'
+    - 'bin/*'
+    - 'config/routes.rb'
+  NewCops: enable
+  TargetRubyVersion: 3.2
+
+Layout/ArgumentAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: start_of_line
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/HashAlignment:
+  EnforcedColonStyle: key
+  EnforcedHashRocketStyle: key
+  EnforcedLastArgumentHashStyle: always_inspect
+
+Layout/LineContinuationLeadingSpace:
+  Enabled: false
+
+Layout/LineLength:
+  AllowHeredoc: true
+  AllowURI: true
+  Enabled: true
+  IgnoreCopDirectives: true
+  Max: 125
+  AllowedPatterns:
+    - '\A\s*#\s*'
+  Exclude:
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+# Layout/MultilineArrayBraceLayout:
+#   EnforcedStyle: symmetrical
+
+Layout/MultilineMethodCallBraceLayout:
+  EnforcedStyle: new_line
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Lint/EmptyFile:
+  Exclude:
+    - '**/.keep'
+
+Lint/MissingSuper:
+  Exclude:
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+Metrics/AbcSize:
+  Exclude:
+    - db/**/*.rb
+    - config/**/*.rb
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+Metrics/BlockLength:
+  Max: 20
+  Exclude:
+    - .simplecov
+    - app/models/concerns/state_machines/**/*.rb
+    - db/**/*.rb
+    - lib/tasks/**/*.rake
+    - app/models/concerns/**/*_machine.rb
+    - Rakefile
+    - config/**/*.rb
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+    - app/**/concerns/**/*.rb
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Exclude:
+    - config/**/*.rb
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+Metrics/PerceivedComplexity:
+  Exclude:
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+Metrics/MethodLength:
+  Exclude:
+    - db/**/*.rb
+    - config/**/*.rb
+    - spec/components/previews/**/*.rb
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+Naming/BlockForwarding:
+  Enabled: false
+
+Naming/VariableNumber:
+  CheckMethodNames: true
+  CheckSymbols: true
+  EnforcedStyle: snake_case
+  Exclude:
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+    - spec/**/*.rb
+
+Naming/MethodParameterName:
+  Exclude:
+    - app/views/**/*.rb
+    - app/components/**/*.rb
+
+Performance/FlatMap:
+  Enabled: true
+  EnabledForFlattenWithoutParams: true
+
+RSpec/AlignLeftLetBrace:
+  Enabled: true
+
+RSpec/ContextWording:
+  Enabled: true
+  Prefixes:
+    - and
+    - as
+    - for
+    - if
+    - in
+    - or
+    - unless
+    - when
+    - with
+    - without
+
+RSpec/EmptyExampleGroup:
+  Enabled: true
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/ExpectChange:
+  Enabled: false
+  EnforcedStyle: block
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Enabled: false
+
+RSpec/PendingWithoutReason:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: true
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma

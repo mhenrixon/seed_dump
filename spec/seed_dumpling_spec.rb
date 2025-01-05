@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-describe SeedDump do
+describe SeedDumpling do
   describe ".dump_using_environment" do
     before do
       create_db
@@ -133,7 +133,7 @@ describe SeedDump do
 
       allow(described_class).to receive(:dump)
 
-      described_class.dump_using_environment
+      expect { described_class.dump_using_environment }.not_to raise_error
     end
   end
 end

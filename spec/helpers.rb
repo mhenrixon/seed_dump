@@ -7,6 +7,7 @@ class Rails
     self
   end
 
+  # rubocop:disable ThreadSafety/ClassInstanceVariable
   def self.eager_load!
     @already_called ||= false
 
@@ -20,6 +21,7 @@ class Rails
 
     @already_called = true
   end
+  # rubocop:enable ThreadSafety/ClassInstanceVariable
 
   def self.env
     "test"
@@ -27,7 +29,7 @@ class Rails
 end
 
 module Helpers
-  def create_db
+  def create_db # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
     ActiveRecord::Migration.verbose = false
 
     ActiveRecord::Schema.define(version: 1) do

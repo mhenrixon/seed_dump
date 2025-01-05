@@ -11,6 +11,8 @@ require:
 
 AllCops:
   DisabledByDefault: false
+  Exclude:
+    - db/seeds.rb
   Include:
     - '*.rb'
     - 'bin/*'
@@ -48,8 +50,7 @@ Layout/LineLength:
   AllowedPatterns:
     - '\A\s*#\s*'
   Exclude:
-    - app/views/**/*.rb
-    - app/components/**/*.rb
+    - spec/**/*.rb
 
 # Layout/MultilineArrayBraceLayout:
 #   EnforcedStyle: symmetrical

@@ -74,7 +74,7 @@ There are more options that can be set— see below for all of them.
 
 Output a dump of all User records:
 ```ruby
-irb(main):001:0> puts SeedDump.dump(User)
+irb(main):001:0> puts SeedDumpling.dump(User)
 User.create!([
   { password: "123456", username: "test_1" },
   { password: "234567", username: "test_2" }
@@ -83,24 +83,24 @@ User.create!([
 
 Write the dump to a file:
 ```ruby
-irb(main):002:0> SeedDump.dump(User, file: 'db/seeds.rb')
+irb(main):002:0> SeedDumpling.dump(User, file: 'db/seeds.rb')
 ```
 
 Append the dump to a file:
 ```ruby
-irb(main):003:0> SeedDump.dump(User, file: 'db/seeds.rb', append: true)
+irb(main):003:0> SeedDumpling.dump(User, file: 'db/seeds.rb', append: true)
 ```
 
 Exclude `name` and `age` from the dump:
 ```ruby
-irb(main):004:0> SeedDump.dump(User, exclude: [:name, :age])
+irb(main):004:0> SeedDumpling.dump(User, exclude: [:name, :age])
 ```
 
 Options are specified as a Hash for the second argument.
 
 In the console, any relation of ActiveRecord rows can be dumped (not individual objects though)
 ```ruby
-irb(main):001:0> puts SeedDump.dump(User.where(is_admin: false))
+irb(main):001:0> puts SeedDumpling.dump(User.where(is_admin: false))
 User.create!([
   { password: "123456", username: "test_1", is_admin: false },
   { password: "234567", username: "test_2", is_admin: false }
@@ -122,9 +122,9 @@ Options are common to both the Rake task and the console, except where noted.
 
 `import`: If `true`, output will be in the format needed by the [activerecord-import](https://github.com/zdennis/activerecord-import) gem, rather than the default format. Default: `false`.
 
-`limit`: Dump no more than this amount of data. Default: no limit. Rake task only. In the console just pass in an ActiveRecord::Relation with the appropriate limit (e.g. `SeedDump.dump(User.limit(5))`).
+`limit`: Dump no more than this amount of data. Default: no limit. Rake task only. In the console just pass in an ActiveRecord::Relation with the appropriate limit (e.g. `SeedDumpling.dump(User.limit(5))`).
 
-`conditions`: Dump only specific records. In the console just pass in an ActiveRecord::Relation with the appropriate conditions (e.g. `SeedDump.dump(User.where(state: :active))`).
+`conditions`: Dump only specific records. In the console just pass in an ActiveRecord::Relation with the appropriate conditions (e.g. `SeedDumpling.dump(User.where(state: :active))`).
 
 `model[s]`: Restrict the dump to the specified comma-separated list of models. Default: all models. If you are using a Rails engine you can dump a specific model by passing "EngineName::ModelName". Rake task only. Example: `rake db:seed:dump MODELS="User, Position, Function"`
 

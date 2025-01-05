@@ -12,6 +12,7 @@ group :development, :test do
 end
 
 group :development do
+  gem "gem-release"
   gem "rake"
   gem "rubocop-factory_bot"
   gem "rubocop-mhenrixon"

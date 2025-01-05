@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class SeedDump
+class SeedDumpling
   # Provides methods for dumping database records into Ruby code that can be used
   # as seeds. Handles various data types and supports both create and import formats.
-  module DumpMethods
+  module DumpMethods # rubocop:disable Metrics/ModuleLength
     include Enumeration
 
     def dump(records, options = {})
@@ -25,7 +25,7 @@ class SeedDump
 
     def filter_attributes(attributes, exclude)
       attributes.select do |key, _|
-        (key.is_a?(String) || key.is_a?(Symbol)) && !exclude.include?(key.to_sym)
+        (key.is_a?(String) || key.is_a?(Symbol)) && exclude.exclude?(key.to_sym)
       end
     end
 
@@ -78,7 +78,7 @@ class SeedDump
       end
     end
 
-    def write_records(records, io, options)
+    def write_records(records, io, options) # rubocop:disable Metrics/MethodLength
       options[:exclude] ||= %i[id created_at updated_at]
 
       method_call = build_method_call(records, options)
@@ -86,7 +86,7 @@ class SeedDump
       io.write("[\n  ")
 
       enumeration_method = select_enumeration_method(records)
-      send(enumeration_method, records, io, options) do |record_strings, last_batch|
+      send(enumeration_method, records, options) do |record_strings, last_batch|
         io.write(record_strings.join(",\n  "))
         io.write(",\n  ") unless last_batch
       end
@@ -103,7 +103,7 @@ class SeedDump
       method = options[:import] ? "import" : "create!"
       model_name = determine_model(records)
       if options[:import]
-        attributes_list = attribute_names(records, options).map(&:to_sym).map(&:inspect).join(", ")
+        attributes_list = attribute_names(records, options).map { _1.to_sym.inspect }.join(", ")
         "#{model_name}.#{method}([#{attributes_list}], "
       else
         "#{model_name}.#{method}("

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class SeedDump
+class SeedDumpling
   # Provides functionality for dumping database records to seed files using
   # environment variables to configure the dump process. Supports model filtering,
   # batch processing, and various output options.
   module Environment
-    def dump_using_environment(env = {})
+    def dump_using_environment(env = {}) # rubocop:disable Metrics/MethodLength
       Rails.application.eager_load!
 
       models = retrieve_models(env) - retrieve_models_exclude(env)
@@ -15,7 +15,7 @@ class SeedDump
       models.each do |model|
         model = model.limit(limit) if limit.present?
 
-        SeedDump.dump(model,
+        SeedDumpling.dump(model,
           append: append,
           batch_size: retrieve_batch_size_value(env),
           exclude: retrieve_exclude_value(env),
@@ -52,7 +52,7 @@ class SeedDump
     #       keys are optional.
     #
     # Returns the Array of Active Record model classes to be dumped.
-    def retrieve_models(env)
+    def retrieve_models(env) # rubocop:disable Metrics/AbcSize
       # Parse either the "MODEL" environment variable or the "MODELS"
       # environment variable, with "MODEL" taking precedence.
       models_env = env["MODEL"] || env["MODELS"]

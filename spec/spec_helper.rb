@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "seed_dump"
+require "seed_dumpling"
 
 require "active_support"
 require "active_record"
@@ -32,7 +32,7 @@ RSpec.configure do |config|
     DatabaseCleaner.clean_with(:truncation)
   end
 
-  config.after(:suite) do 
+  config.after(:suite) do
     FileUtils.rm_rf("blargle")
     FileUtils.rm_rf("db/seed.rb")
   end

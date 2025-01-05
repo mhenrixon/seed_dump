@@ -1,23 +1,32 @@
 # frozen_string_literal: true
 
-Gem::Specification.new do |s|
-  s.name        = "seed_dumper"
-  s.version     = "1.0.0"
-  s.summary     = "Seed Dumper for Rails"
-  s.description = "Dump (parts) of your database to db/seeds.rb to get a headstart creating a meaningful seeds.rb file"
-  s.authors     = ["Mikael Henriksson"]
-  s.email       = "mikael@mhenrixon.com"
-  s.homepage    = "https://github.com/rroblak/seed_dump"
-  s.licenses    = ["MIT"]
+require_relative "lib/seed_dumpling/version"
 
-  s.require_paths = ["lib"]
-  s.files         = Dir.glob("lib/**/*") + ["README.md", "MIT-LICENSE"]
+Gem::Specification.new do |spec|
+  spec.name        = "seed_dumpling"
+  spec.version     = SeedDupling::VERSION
+  spec.summary     = "Seed Dumper for Rails"
+  spec.description = <<~DESC.squish
+    Dump (parts) of your database to db/seedspec.rb to get a headstart creating a meaningful seedspec.rb file
+  DESC
+  spec.authors     = ["Mikael Henriksson"]
+  spec.email       = "mikael@mhenrixon.com"
+  spec.homepage    = "https://github.com/mhenrixon/dumpling"
+  spec.license     = "MIT"
 
-  s.add_dependency "activerecord"
-  s.add_dependency "activerecord-import"
-  s.add_dependency "activesupport"
+  spec.required_ruby_version = ">= 3.2.0"
 
-  s.metadata = {
+  spec.require_paths = ["lib"]
+  spec.files         = Dir.glob("lib/**/*") + ["README.md", "MIT-LICENSE"]
+
+  spec.add_dependency "activerecord"
+  spec.add_dependency "activerecord-import"
+  spec.add_dependency "activesupport"
+
+  spec.metadata = {
     "rubygems_mfa_required" => "true",
+    "homepage_uri" => spec.homepage,
+    "source_code_uri" => spec.homepage,
+    "changelog_uri" => "#{spec.homepage}/blob/up/CHANGELOG.md",
   }
 end

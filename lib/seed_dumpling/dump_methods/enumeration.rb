@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
-class SeedDump
+class SeedDumpling
   module DumpMethods
+    #
+    # Helpermethods for enumerating active records
+    #
     module Enumeration
-      def active_record_enumeration(records, _io, options)
+      def active_record_enumeration(records, options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         # Ensure records are ordered by primary key if not already ordered
         unless records.respond_to?(:arel) && records.arel.orders.present?
           records = records.order("#{records.quoted_table_name}.#{records.quoted_primary_key} ASC")
@@ -26,7 +29,7 @@ class SeedDump
         end
       end
 
-      def enumerable_enumeration(records, _io, options)
+      def enumerable_enumeration(records, options)
         _, batch_size = batch_params_from(records, options)
         record_strings = []
 

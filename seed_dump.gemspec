@@ -4,7 +4,7 @@ require_relative "lib/seed_dumpling/version"
 
 Gem::Specification.new do |spec|
   spec.name        = "seed_dumpling"
-  spec.version     = SeedDupling::VERSION
+  spec.version     = SeedDumpling::VERSION
   spec.summary     = "Seed Dumper for Rails"
   spec.description = <<~DESC.squish
     Dump (parts) of your database to db/seedspec.rb to get a headstart creating a meaningful seedspec.rb file
@@ -19,9 +19,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.files         = Dir.glob("lib/**/*") + ["README.md", "MIT-LICENSE"]
 
-  spec.add_dependency "activerecord"
   spec.add_dependency "activerecord-import"
-  spec.add_dependency "activesupport"
+  spec.add_dependency "rails", ">= 7.0", "< 9.0"
 
   spec.metadata = {
     "rubygems_mfa_required" => "true",

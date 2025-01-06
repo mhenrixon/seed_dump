@@ -5,6 +5,14 @@ class SeedDumpling
   # environment variables to configure the dump process. Supports model filtering,
   # batch processing, and various output options.
   module Environment
+    extend ActiveSupport::Concern
+
+    class_methods do
+      def dump_using_environment(...)
+        new.dump_using_environment(...)
+      end
+    end
+
     def dump_using_environment(env = {}) # rubocop:disable Metrics/MethodLength
       Rails.application.eager_load!
 

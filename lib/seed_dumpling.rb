@@ -8,8 +8,8 @@ require "seed_dumpling/environment"
 # Tool for extracting database records into a format suitable for
 # Rails' db/seeds.rb. Supports various data types and configurable output formats.
 class SeedDumpling
-  extend Environment
-  extend DumpMethods
+  include Environment
+  include DumpMethods
 
   require "seed_dumpling/railtie" if defined?(Rails)
 end

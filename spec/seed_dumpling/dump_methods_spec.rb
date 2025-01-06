@@ -13,11 +13,11 @@ describe SeedDumpling::DumpMethods do
     "#{output}#{data.join(",\n  ")}\n])\n"
   end
 
-  describe ".dump" do
-    def dump(...)
-      SeedDumpling.dump(...)
-    end
+  def dump(...)
+    SeedDumpling.dump(...)
+  end
 
+  describe ".dump" do
     before do
       Rails.application.eager_load!
 
@@ -161,6 +161,156 @@ describe SeedDumpling::DumpMethods do
           RUBY
         end
       end
+    end
+  end
+
+  describe "Active Storage and Action Text handling" do
+    let(:test_model) do
+      Class.new(ApplicationRecord) do
+        include ActiveStorage::Attached::Model
+        include GlobalID::Identification
+
+        self.table_name = "test_models"
+        has_one_attached :avatar
+        has_many_attached :photos
+        has_rich_text :content
+
+        def self.name
+          "TestModel"
+        end
+
+        def self.primary_key
+          "id"
+        end
+
+        def to_trix_content_attachment_partial_path
+          "rich_text_area"
+        end
+      end
+    end
+
+    before(:all) do
+      FileUtils.rm_rf(Rails.root.join('db/seeds/files'))
+    end
+
+    after(:all) do
+      FileUtils.rm_rf(Rails.root.join('db/seeds/files'))
+    end
+
+    before do
+      ActiveRecord::Base.connection.create_table :test_models do |t|
+        t.string :name
+        t.timestamps
+      end
+
+      # Load and run the Active Storage migration
+      require "active_storage/engine"
+      migration_dir = Gem.loaded_specs["activestorage"].full_gem_path
+
+      require File.join(migration_dir, "db/migrate/20170806125915_create_active_storage_tables.rb")
+      CreateActiveStorageTables.new.change
+
+      # Load and run the Action Text migration
+      require "action_text/engine"
+      migration_dir = Gem.loaded_specs["actiontext"].full_gem_path
+
+      require File.join(migration_dir, "db/migrate/20180528164100_create_action_text_tables.rb")
+      CreateActionTextTables.new.change
+
+      Object.const_set(:TestModel, test_model)
+    end
+
+    after(:each) do
+      # Delete in correct order to avoid foreign key violations
+      %i[
+        active_storage_attachments
+        active_storage_variant_records
+        active_storage_blobs
+        test_models
+        action_text_rich_texts
+      ].each do |table_name|
+        if ActiveRecord::Base.connection.table_exists?(table_name)
+          ActiveRecord::Base.connection.execute("DELETE FROM #{table_name}")
+          ActiveRecord::Base.connection.drop_table(table_name)
+        end
+      end
+    end
+
+    it "copies single attachments to seeds directory" do
+      model = test_model.create!(name: "Test")
+      
+      file_path = fixture_file("icon.png")
+      model.avatar.attach(io: file_path, filename: "icon.png", content_type: "image/png")
+
+      dump([model])
+
+      expect(File.exist?(Rails.root.join('db/seeds/files', 'icon.png'))).to be true
+      expect(FileUtils.identical?(file_path, Rails.root.join('db/seeds/files', 'icon.png'))).to be true
+    end
+
+    it "copies multiple attachments to seeds directory" do
+      model = test_model.create!(name: "Test")
+      
+      2.times do |i|
+        # Get a fresh file handle for each attachment
+        file = fixture_file("icon.png")
+        model.photos.attach(
+          io: file,
+          filename: "icon#{i}.png",
+          content_type: "image/png"
+        )
+        file.close
+      end
+
+      dump([model])
+
+      2.times do |i|
+        expect(File.exist?(Rails.root.join('db/seeds/files', "icon#{i}.png"))).to be true
+        expect(FileUtils.identical?(
+          fixture_file("icon.png"),
+          Rails.root.join('db/seeds/files', "icon#{i}.png"),
+        )).to be true
+      end
+    end
+
+    it "doesn't copy the same file twice" do
+      model = test_model.create!(name: "Test")
+      
+      file = fixture_file("icon.png")
+      model.avatar.attach(
+        io: file,
+        filename: "icon.png",
+        content_type: "image/png"
+      )
+      file.close
+
+      allow(FileUtils).to receive(:cp).and_call_original
+      
+      dump([model])
+      expect(FileUtils).to have_received(:cp).once
+
+      dump([model]) # Second dump shouldn't copy the file again
+      expect(FileUtils).to have_received(:cp).once
+    end
+
+    it "handles rich text content" do
+      model = test_model.create!(name: "Test")
+      model.reload
+
+      model.content = "<div>Test rich text content</div>"
+
+      result = dump([model])
+      expect(result).to include("<div>Test rich text content</div>")
+    end
+
+    it "handles nil attachments" do
+      model = test_model.create!(name: "Test")
+      model.reload
+
+      result = dump([model])
+
+      expect(result).to include("avatar: nil")
+      expect(result).to include("photos: []")
     end
   end
 end

@@ -2,8 +2,7 @@
 
 source "https://rubygems.org"
 
-gem "activerecord", ">= 7.0", "< 9.0"
-gem "activesupport", ">= 7.0", "< 9.0"
+gem "rails"
 
 group :development, :test do
   gem "activerecord-import"
@@ -25,6 +24,7 @@ end
 
 group :test do
   gem "database_cleaner"
+  gem "rack-test"
   gem "rspec"
   gem "sqlite3"
 end

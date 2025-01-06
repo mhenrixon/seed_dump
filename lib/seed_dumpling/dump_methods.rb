@@ -1,10 +1,21 @@
 # frozen_string_literal: true
 
+require "action_text"
+require "active_storage"
+
 class SeedDumpling
   # Provides methods for dumping database records into Ruby code that can be used
   # as seeds. Handles various data types and supports both create and import formats.
   module DumpMethods # rubocop:disable Metrics/ModuleLength
+    extend ActiveSupport::Concern
+
     include Enumeration
+
+    class_methods do
+      def dump(...)
+        new.dump(...)
+      end
+    end
 
     def dump(records, options = {})
       return nil if records.none?
@@ -17,8 +28,16 @@ class SeedDumpling
 
     private
 
-    def dump_record(record, options)
+    def dump_record(record, options) # rubocop:disable Metrics/AbcSize
       attributes = filter_attributes(record.attributes, options[:exclude])
+
+      # Make sure we include attachments and rich text in the final output
+      attributes["avatar"] = record.avatar if record.respond_to?(:avatar) && defined?(ActiveStorage::Attached::One)
+
+      attributes["photos"] = record.photos if record.respond_to?(:photos) && defined?(ActiveStorage::Attached::Many)
+
+      attributes["content"] = record.content if record.respond_to?(:content) && record.content.is_a?(ActionText::RichText)
+
       formatted_attributes = format_attributes(attributes, options[:import])
       wrap_attributes(formatted_attributes, options[:import])
     end
@@ -40,14 +59,20 @@ class SeedDumpling
       "#{open_char}#{attribute_string}#{close_char}"
     end
 
-    def value_to_s(value)
+    def value_to_s(value) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize, Metrics/CyclomaticComplexity
       formatted_value = case value
                         when BigDecimal, IPAddr, ->(v) { rgeo_instance?(v) }
                           value.to_s
                         when Date, Time, DateTime
-                          value.to_formatted_s(:db)
+                          value.to_fs(:db)
                         when Range
                           range_to_string(value)
+                        when ->(v) { defined?(ActiveStorage::Attached::One) && v.is_a?(ActiveStorage::Attached::One) }
+                          handle_active_storage_one(value)
+                        when ->(v) { defined?(ActiveStorage::Attached::Many) && v.is_a?(ActiveStorage::Attached::Many) }
+                          handle_active_storage_many(value)
+                        when ->(v) { defined?(ActionText::RichText) && v.is_a?(ActionText::RichText) }
+                          handle_rich_text(value)
                         else
                           value
       end
@@ -138,6 +163,66 @@ class SeedDumpling
       else
         :enumerable_enumeration
       end
+    end
+
+    def handle_active_storage_one(attachment)
+      return nil unless attachment.attached?
+
+      copy_attachment_to_seeds_dir(attachment)
+
+      {
+        io: "File.open(Rails.root.join('db/seeds/files', '#{attachment.filename}'))",
+        filename: attachment.filename.to_s,
+        content_type: attachment.blob.content_type
+      }
+    end
+
+    def handle_active_storage_many(attachments)
+      return [] unless attachments.attached?
+
+      attachments.map do |attachment|
+        copy_attachment_to_seeds_dir(attachment)
+        
+        {
+          io: "File.open(Rails.root.join('db/seeds/files', '#{attachment.filename}'))",
+          filename: attachment.filename.to_s,
+          content_type: attachment.blob.content_type
+        }
+      end
+    end
+
+    private
+
+    def copy_attachment_to_seeds_dir(attachment)
+      return unless attachment&.blob
+
+      seeds_dir = Rails.root.join('db/seeds/files')
+      FileUtils.mkdir_p(seeds_dir)
+
+      target_path = seeds_dir.join(attachment.filename.to_s)
+      
+      # Skip if file already exists
+      return if File.exist?(target_path)
+
+      begin
+        # Try to get direct file path first
+        source_path = attachment.blob.service.path_for(attachment.blob.key)
+        if source_path && File.exist?(source_path)
+          FileUtils.cp(source_path, target_path)
+        else
+          # Fallback to downloading for cloud storage
+          File.open(target_path, 'wb') do |file|
+            attachment.download { |chunk| file.write(chunk) }
+          end
+        end
+      rescue StandardError => e
+        Rails.logger.error "Failed to copy attachment #{attachment.filename}: #{e.message}"
+        raise e
+      end
+    end
+
+    def handle_rich_text(rich_text)
+      rich_text.body&.to_html
     end
   end
 end

@@ -22,3 +22,5 @@ pkg
 Gemfile.lock
 blargle
 db/seeds.rb
+spec/tmp/
+spec/log/

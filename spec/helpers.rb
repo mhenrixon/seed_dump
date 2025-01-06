@@ -2,7 +2,7 @@
 
 # Mock Rails.application.eager_load! and define some
 # Rails models for use in specs.
-class Rails
+module Rails
   def self.application
     self
   end
@@ -13,11 +13,11 @@ class Rails
 
     return if @already_called
 
-    Object.const_set(:Sample, Class.new(ActiveRecord::Base))
-    Object.const_set(:AnotherSample, Class.new(ActiveRecord::Base))
-    Object.const_set(:YetAnotherSample, Class.new(ActiveRecord::Base))
-    Object.const_set(:NoTableModel, Class.new(ActiveRecord::Base))
-    Object.const_set(:EmptyModel, Class.new(ActiveRecord::Base))
+    Object.const_set(:Sample, Class.new(ApplicationRecord))
+    Object.const_set(:AnotherSample, Class.new(ApplicationRecord))
+    Object.const_set(:YetAnotherSample, Class.new(ApplicationRecord))
+    Object.const_set(:NoTableModel, Class.new(ApplicationRecord))
+    Object.const_set(:EmptyModel, Class.new(ApplicationRecord))
 
     @already_called = true
   end
@@ -82,6 +82,14 @@ module Helpers
     end
   end
 
+  def fixture_file(filename)
+    file_path = File.join(__dir__, 'fixtures', 'files', filename)
+    raise "Fixture file '#{filename}' does not exist" unless File.exist?(file_path)
+    
+    # Return a new file handle each time to avoid reuse issues
+    File.open(file_path, 'rb')
+  end
+  
   def load_sample_data
     Rails.application.eager_load!
 

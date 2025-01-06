@@ -6,9 +6,7 @@ Gem::Specification.new do |spec|
   spec.name        = "seed_dumpling"
   spec.version     = SeedDumpling::VERSION
   spec.summary     = "Seed Dumper for Rails"
-  spec.description = <<~DESC.squish
-    Dump (parts) of your database to db/seedspec.rb to get a headstart creating a meaningful seedspec.rb file
-  DESC
+  spec.description = "Dump (parts) of your database to db/seedspec.rb to get a headstart creating a meaningful seedspec.rb file."
   spec.authors     = ["Mikael Henriksson"]
   spec.email       = "mikael@mhenrixon.com"
   spec.homepage    = "https://github.com/mhenrixon/dumpling"

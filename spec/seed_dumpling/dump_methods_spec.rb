@@ -189,14 +189,6 @@ describe SeedDumpling::DumpMethods do
       end
     end
 
-    before(:all) do
-      FileUtils.rm_rf(Rails.root.join('db/seeds/files'))
-    end
-
-    after(:all) do
-      FileUtils.rm_rf(Rails.root.join('db/seeds/files'))
-    end
-
     before do
       ActiveRecord::Base.connection.create_table :test_models do |t|
         t.string :name
@@ -218,9 +210,11 @@ describe SeedDumpling::DumpMethods do
       CreateActionTextTables.new.change
 
       Object.const_set(:TestModel, test_model)
+
+      FileUtils.rm_rf(Rails.root.join("db/seeds/files"))
     end
 
-    after(:each) do
+    after do
       # Delete in correct order to avoid foreign key violations
       %i[
         active_storage_attachments
@@ -234,30 +228,32 @@ describe SeedDumpling::DumpMethods do
           ActiveRecord::Base.connection.drop_table(table_name)
         end
       end
+
+      FileUtils.rm_rf(Rails.root.join("db/seeds/files"))
     end
 
     it "copies single attachments to seeds directory" do
       model = test_model.create!(name: "Test")
-      
+
       file_path = fixture_file("icon.png")
       model.avatar.attach(io: file_path, filename: "icon.png", content_type: "image/png")
 
       dump([model])
 
-      expect(File.exist?(Rails.root.join('db/seeds/files', 'icon.png'))).to be true
-      expect(FileUtils.identical?(file_path, Rails.root.join('db/seeds/files', 'icon.png'))).to be true
+      expect(Rails.root.join("db/seeds/files/icon.png").exist?).to be true
+      expect(FileUtils.identical?(file_path, Rails.root.join("db/seeds/files/icon.png"))).to be true
     end
 
     it "copies multiple attachments to seeds directory" do
       model = test_model.create!(name: "Test")
-      
+
       2.times do |i|
         # Get a fresh file handle for each attachment
         file = fixture_file("icon.png")
         model.photos.attach(
           io: file,
           filename: "icon#{i}.png",
-          content_type: "image/png"
+          content_type: "image/png",
         )
         file.close
       end
@@ -265,27 +261,28 @@ describe SeedDumpling::DumpMethods do
       dump([model])
 
       2.times do |i|
-        expect(File.exist?(Rails.root.join('db/seeds/files', "icon#{i}.png"))).to be true
+        expect(Rails.root.join("db/seeds/files", "icon#{i}.png").exist?).to be true
         expect(FileUtils.identical?(
           fixture_file("icon.png"),
-          Rails.root.join('db/seeds/files', "icon#{i}.png"),
-        )).to be true
+          Rails.root.join("db/seeds/files", "icon#{i}.png"),
+        ),
+              ).to be true
       end
     end
 
     it "doesn't copy the same file twice" do
       model = test_model.create!(name: "Test")
-      
+
       file = fixture_file("icon.png")
       model.avatar.attach(
         io: file,
         filename: "icon.png",
-        content_type: "image/png"
+        content_type: "image/png",
       )
       file.close
 
       allow(FileUtils).to receive(:cp).and_call_original
-      
+
       dump([model])
       expect(FileUtils).to have_received(:cp).once
 

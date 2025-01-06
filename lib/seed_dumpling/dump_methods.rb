@@ -173,7 +173,7 @@ class SeedDumpling
       {
         io: "File.open(Rails.root.join('db/seeds/files', '#{attachment.filename}'))",
         filename: attachment.filename.to_s,
-        content_type: attachment.blob.content_type
+        content_type: attachment.blob.content_type,
       }
     end
 
@@ -182,25 +182,23 @@ class SeedDumpling
 
       attachments.map do |attachment|
         copy_attachment_to_seeds_dir(attachment)
-        
+
         {
           io: "File.open(Rails.root.join('db/seeds/files', '#{attachment.filename}'))",
           filename: attachment.filename.to_s,
-          content_type: attachment.blob.content_type
+          content_type: attachment.blob.content_type,
         }
       end
     end
 
-    private
-
-    def copy_attachment_to_seeds_dir(attachment)
+    def copy_attachment_to_seeds_dir(attachment) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       return unless attachment&.blob
 
-      seeds_dir = Rails.root.join('db/seeds/files')
+      seeds_dir = Rails.root.join("db/seeds/files")
       FileUtils.mkdir_p(seeds_dir)
 
       target_path = seeds_dir.join(attachment.filename.to_s)
-      
+
       # Skip if file already exists
       return if File.exist?(target_path)
 
@@ -211,7 +209,7 @@ class SeedDumpling
           FileUtils.cp(source_path, target_path)
         else
           # Fallback to downloading for cloud storage
-          File.open(target_path, 'wb') do |file|
+          File.open(target_path, "wb") do |file|
             attachment.download { |chunk| file.write(chunk) }
           end
         end

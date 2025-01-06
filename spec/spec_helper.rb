@@ -24,8 +24,8 @@ class TestApp < Rails::Application
   config.active_storage.service_configurations = {
     test: {
       service: "Disk",
-      root: Rails.root.join("tmp/storage")
-    }
+      root: Rails.root.join("tmp/storage"),
+    },
   }
 
   # Disable schema checks for this test-application setup

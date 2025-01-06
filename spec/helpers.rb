@@ -83,13 +83,13 @@ module Helpers
   end
 
   def fixture_file(filename)
-    file_path = File.join(__dir__, 'fixtures', 'files', filename)
+    file_path = File.join(__dir__, "fixtures", "files", filename)
     raise "Fixture file '#{filename}' does not exist" unless File.exist?(file_path)
-    
+
     # Return a new file handle each time to avoid reuse issues
-    File.open(file_path, 'rb')
+    File.open(file_path, "rb")
   end
-  
+
   def load_sample_data
     Rails.application.eager_load!
 
